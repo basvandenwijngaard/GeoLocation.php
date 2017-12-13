@@ -19,6 +19,7 @@ namespace AnthonyMartin\GeoLocation;
  */
 class GeoLocation {
 
+	private $google_apikey; // Google API key
 	private $radLat;  // latitude in radians
 	private $radLon;  // longitude in radians
 
@@ -40,6 +41,23 @@ class GeoLocation {
 		self::$MAX_LAT = deg2rad(90);    //  PI/2
 		self::$MIN_LON = deg2rad(-180);  // -PI
 		self::$MAX_LON = deg2rad(180);   //  PI
+	}
+	
+	/**
+	 * setGoogleApikey function.
+	 * 
+	 * @access public
+	 * @param mixed $key
+	 * @return void
+	 */
+	public function setGoogleApikey( $key ) {
+		
+		if ( !empty(trim($key)) ) {
+			
+			$this->google_apikey = $key;
+			
+		}
+		
 	}
 
 	/**
@@ -78,17 +96,17 @@ class GeoLocation {
 			throw new \Exception("Invalid Argument");
 	}
 
-  /**
-   * Computes the great circle distance between this GeoLocation instance
-   * and the location argument.
-   * @param GeoLocation $location
-   * @param string $unit_of_measurement
-   * @internal param float $radius the radius of the sphere, e.g. the average radius for a
-   * spherical approximation of the figure of the Earth is approximately
-   * 6371.01 kilometers.
-   * @return double the distance, measured in the same unit as the radius
-   * argument.
-   */
+	/**
+	* Computes the great circle distance between this GeoLocation instance
+	* and the location argument.
+	* @param GeoLocation $location
+	* @param string $unit_of_measurement
+	* @internal param float $radius the radius of the sphere, e.g. the average radius for a
+	* spherical approximation of the figure of the Earth is approximately
+	* 6371.01 kilometers.
+	* @return double the distance, measured in the same unit as the radius
+	* argument.
+	*/
 	public function distanceTo(GeoLocation $location, $unit_of_measurement) {
 		$radius = $this->getEarthsRadius($unit_of_measurement);
 
@@ -138,41 +156,41 @@ class GeoLocation {
 	}
 
 
-  /**
-   * <p>Computes the bounding coordinates of all points on the surface
-   * of a sphere that have a great circle distance to the point represented
-   * by this GeoLocation instance that is less or equal to the distance
-   * argument.</p>
-   * <p>For more information about the formulae used in this method visit
-   * <a href="http://JanMatuschek.de/LatitudeLongitudeBoundingCoordinates">
-   * http://JanMatuschek.de/LatitudeLongitudeBoundingCoordinates</a>.</p>
-   *
-   * @param double $distance the distance from the point represented by this
-   * GeoLocation instance. Must me measured in the same unit as the radius
-   * argument.
-   * @param string $unit_of_measurement
-   * @throws \Exception
-   * @internal param radius the radius of the sphere, e.g. the average radius for a
-   * spherical approximation of the figure of the Earth is approximately
-   * 6371.01 kilometers.
-   * @return GeoLocation[] an array of two GeoLocation objects such that:<ul>
-   * <li>The latitude of any point within the specified distance is greater
-   * or equal to the latitude of the first array element and smaller or
-   * equal to the latitude of the second array element.</li>
-   * <li>If the longitude of the first array element is smaller or equal to
-   * the longitude of the second element, then
-   * the longitude of any point within the specified distance is greater
-   * or equal to the longitude of the first array element and smaller or
-   * equal to the longitude of the second array element.</li>
-   * <li>If the longitude of the first array element is greater than the
-   * longitude of the second element (this is the case if the 180th
-   * meridian is within the distance), then
-   * the longitude of any point within the specified distance is greater
-   * or equal to the longitude of the first array element
-   * <strong>or</strong> smaller or equal to the longitude of the second
-   * array element.</li>
-   * </ul>
-   */
+	/**
+	* <p>Computes the bounding coordinates of all points on the surface
+	* of a sphere that have a great circle distance to the point represented
+	* by this GeoLocation instance that is less or equal to the distance
+	* argument.</p>
+	* <p>For more information about the formulae used in this method visit
+	* <a href="http://JanMatuschek.de/LatitudeLongitudeBoundingCoordinates">
+	* http://JanMatuschek.de/LatitudeLongitudeBoundingCoordinates</a>.</p>
+	*
+	* @param double $distance the distance from the point represented by this
+	* GeoLocation instance. Must me measured in the same unit as the radius
+	* argument.
+	* @param string $unit_of_measurement
+	* @throws \Exception
+	* @internal param radius the radius of the sphere, e.g. the average radius for a
+	* spherical approximation of the figure of the Earth is approximately
+	* 6371.01 kilometers.
+	* @return GeoLocation[] an array of two GeoLocation objects such that:<ul>
+	* <li>The latitude of any point within the specified distance is greater
+	* or equal to the latitude of the first array element and smaller or
+	* equal to the latitude of the second array element.</li>
+	* <li>If the longitude of the first array element is smaller or equal to
+	* the longitude of the second element, then
+	* the longitude of any point within the specified distance is greater
+	* or equal to the longitude of the first array element and smaller or
+	* equal to the longitude of the second array element.</li>
+	* <li>If the longitude of the first array element is greater than the
+	* longitude of the second element (this is the case if the 180th
+	* meridian is within the distance), then
+	* the longitude of any point within the specified distance is greater
+	* or equal to the longitude of the first array element
+	* <strong>or</strong> smaller or equal to the longitude of the second
+	* array element.</li>
+	* </ul>
+	*/
 	public function boundingCoordinates($distance, $unit_of_measurement) {
 		$radius = $this->getEarthsRadius($unit_of_measurement);
 		if ($radius < 0 || $distance < 0) throw new \Exception('Arguments must be greater than 0.');
@@ -223,12 +241,22 @@ class GeoLocation {
 	 *	@param string $location address, city, state, etc.
 	 *	@return \stdClass
 	 */
-	public static function getGeocodeFromGoogle($location) {
-		$url = 'http://maps.googleapis.com/maps/api/geocode/json?address='.urlencode($location).'&sensor=false';
+	public function getGeocodeFromGoogle($location) {
+		
+		$url = 'https://maps.googleapis.com/maps/api/geocode/json?address='.urlencode($location).'&sensor=false';
+		
+		// If Google API key is set, add it to the URL
+		if ( isset($this) && !empty( $this->google_apikey ) ) {
+			
+			$url .= '&key=' . $this->google_apikey .'';
+			
+		}
+		
 		$ch = curl_init();
-	    curl_setopt($ch, CURLOPT_URL,$url);
-	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	    return json_decode(curl_exec($ch));
+		curl_setopt($ch, CURLOPT_URL,$url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		return json_decode(curl_exec($ch));
+		
 	}
 	public static function MilesToKilometers($miles) {
 		return $miles * 1.6093439999999999;
@@ -236,5 +264,5 @@ class GeoLocation {
 	public static function KilometersToMiles($km) {
 		return $km * 0.621371192237334;
 	}
+	
 }
-
